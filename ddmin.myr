@@ -1,10 +1,10 @@
 use std
 use bio
 
-const chunks : byte[:][:] = [][:]
+var chunks : byte[:][:]
 
-var testfile : byte[:] = [][:]
-var tester : byte[:] = [][:]
+var testfile : byte[:]
+var tester : byte[:]
 
 type result = union 
     `Interesting

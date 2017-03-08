@@ -6,7 +6,6 @@ use std
 use bio
 
 var chunks : byte[:][:]
-
 var testfile : byte[:]
 var tester : byte[:]
 

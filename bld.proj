@@ -1,2 +1,2 @@
 bin ddmin = ddmin.myr;;
-gen readme.md = sh -c "man2html ddmin.1 | pandoc -t markdown > readme.md" ;;
+gen readme.txt = sh -c "man ./ddmin.1 > readme.txt" ;;

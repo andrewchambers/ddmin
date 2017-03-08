@@ -1,0 +1,53 @@
+.Dd $Mdocdate: March 8 2017 $
+.Dt DDMIN 1
+.Os
+.Sh NAME
+.Nm ddmin
+.Nd minimise textual test cases automatically
+.Sh SYNOPSIS
+.Nm ddmin
+.Op Fl c
+.Op Fl h
+.Ar tester
+.Ar testfile
+.Sh DESCRIPTION
+.Nm
+minimises 
+.Ar testfile
+in place automatically using delta debugging.
+It works by by deleting lines (or characters with -c) while ensuring
+.Ar tester
+returns 0.
+.Sh EXIT STATUS
+.Ex -std ddmin
+.Sh EXAMPLE
+.Bd -literal
+Given the input file test.c:
+
+#include <stdio.h>
+
+int main()
+{
+	printf("hello world!\n");
+	return 0;
+}
+
+The test script test.sh:
+
+#! /bin/sh
+
+set -e
+
+gcc test.c
+if ! ./a.out | grep -q "hello" then
+	exit 1
+fi
+
+The invocation:
+
+ddmin -c ./test.sh ./test.c
+
+Produces the minimised output:
+
+int main(){printf("hello");return;}
+.Ed

@@ -1,10 +1,10 @@
 use std
 use bio
 
-const lines : byte[:][:] = [][:]
+const chunks : byte[:][:] = [][:]
 
-var testfile : byte[:] = "./testfile.txt"
-var tester : byte[:] = "./test.sh"
+var testfile : byte[:] = [][:]
+var tester : byte[:] = [][:]
 
 type result = union 
     `Interesting
@@ -111,6 +111,7 @@ const ddmin2 = {test, n
         -> ddmin2(test, n)
     ;;
     
+    spittest(test)
     cleanup()
     -> void
 }
@@ -119,11 +120,11 @@ const spittest = {test : std.bitset#
     // XXX: Write the test with the same permissions it started with.
     var f = std.try(bio.create(testfile, bio.Wr, 0o755))
     
-    for var i = 0; i < lines.len; i++
+    for var i = 0; i < chunks.len; i++
         if std.bshas(test, i)
-            match bio.write(f, lines[i])
+            match bio.write(f, chunks[i])
             | `bio.Ok n:
-                if lines[i].len != n
+                if chunks[i].len != n
                     std.fatal("error writing test case\n")
                 ;;
             | _:
@@ -137,24 +138,34 @@ const spittest = {test : std.bitset#
     ;;
 }
 
-const loadtestlines = {
+const loadtestchunks = {chars
     var f = std.try(bio.open(testfile, bio.Rd))
    
     while true
-        match bio.readto(f, "\n")
-        | `bio.Ok ln:
-            // XXX maybe these stdlib functions should keep the delim
-            // XXX we are adding a \n even when we don't want one at EOF...
-            var lndup = std.sldup(ln)
-            std.slfree(ln)
-            std.sljoin(&lndup, "\n")
-            std.slpush(&lines, lndup)
-        | `bio.Eof:
-            break
-        | `bio.Err ioerr:
-            std.fatal("error reading input line: {}\n", ioerr)
+        if chars
+            match bio.getb(f)
+            | `bio.Ok b:
+                std.slpush(&chunks, std.sldup([b][:]))
+            | `bio.Eof:
+                break
+            | `bio.Err ioerr:
+                std.fatal("error reading input line: {}\n", ioerr)
+            ;;
+        else
+            match bio.readto(f, "\n")
+            | `bio.Ok ln:
+                // XXX maybe these stdlib functions should keep the delim
+                // XXX we are adding a \n even when we don't want one at EOF...
+                var lndup = std.sldup(ln)
+                std.slfree(ln)
+                std.sljoin(&lndup, "\n")
+                std.slpush(&chunks, lndup)
+            | `bio.Eof:
+                break
+            | `bio.Err ioerr:
+                std.fatal("error reading input line: {}\n", ioerr)
+            ;;
         ;;
-       
    ;;
     
     if !bio.close(f)
@@ -163,16 +174,33 @@ const loadtestlines = {
 }
 
 const main = { args : byte[:][:]
-    if args.len != 3 
-        std.fatal("usage: {} TESTER INPUT\n", args[0])
-    ;;
-    tester = args[1]
-    testfile = args[2]
+    
+    var cmd = std.optparse(args, &[
+        .argdesc = "tester testfile",
+        .minargs = 2,
+        .maxargs = 2,
+        .opts = [
+            [.opt='c', .desc="minimise chars instead of lines"],
+        ][:]
+    ])
+    var chars = false
 
-    loadtestlines()
+    for opt in cmd.opts
+        match opt
+        | ('c', ""):
+            chars = true
+        | _:
+            std.die("unreachable\n")
+        ;;
+    ;;
+
+    tester = cmd.args[0]
+    testfile = cmd.args[1]
+
+    loadtestchunks(chars)
         
     var initialtest = std.mkbs()
-    for var i = 0; i < lines.len; i++
+    for var i = 0; i < chunks.len; i++
         std.bsput(initialtest, i) 
     ;;
 

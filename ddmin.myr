@@ -1,0 +1,186 @@
+use std
+use bio
+
+const lines : byte[:][:] = [][:]
+
+var testfile : byte[:] = "./testfile.txt"
+var tester : byte[:] = "./test.sh"
+
+type result = union 
+    `Interesting
+    `Boring
+;;
+
+const runtest = {test : std.bitset#
+    spittest(test)
+    
+    var pid = std.fork()
+    
+    if pid == 0
+        std.execvp(tester, [][:])
+        std.fatal("error executing {}!\n", tester)
+    ;;
+    
+    match std.wait(pid)
+    | `std.Wsuccess:
+        -> `Interesting
+    | _:
+        -> `Boring
+    ;;
+}
+
+const partition = {test, n
+    var partitions : std.bitset#[:] = [][:]
+    var vals = [][:]
+    
+    for v in std.bybsvalue(test)
+        std.slpush(&vals, v)
+    ;;
+    
+    var partsz = vals.len / n
+    
+    for var i = 0; i < vals.len && partsz != 0; i += partsz
+        std.slpush(&partitions, std.mkbs())
+        for var j = 0 ; j < partsz && i+j < vals.len; j++
+            std.bsput(partitions[partitions.len-1], vals[i + j])
+        ;;
+    ;;
+    
+    std.slfree(vals)
+    
+    -> partitions
+}
+
+const ddmin = {test
+    -> ddmin2(test, 2)
+}
+
+const ddmin2 = {test, n
+    // XXX mc bug? cannot use this label...
+    // :tailrecurse
+    
+    var subtests = partition(test, n)
+    
+    var cleanupsubtestsexcept = {retain
+        for subtest in subtests
+            if subtest != retain
+                std.bsfree(subtest)
+            ;;
+        ;;
+        std.slfree(subtests)
+    }
+    
+    var cleanup = {
+        cleanupsubtestsexcept((0 : std.bitset#))
+        std.bsfree(test)
+    }
+    
+    for subtest in subtests
+        match runtest(subtest)
+        | `Interesting:
+            std.bsfree(test)
+            cleanupsubtestsexcept(subtest)
+            test = subtest
+            n = 2
+            //goto tailrecurse
+            -> ddmin2(test, n)
+        | `Boring:
+        ;;
+    ;;
+    
+    for subtest in subtests
+        var compliment = std.bsdup(test)
+        std.bsdiff(compliment, subtest)
+        match runtest(compliment)
+        | `Interesting:
+            cleanup()
+            test = compliment
+            n = std.max(n - 1, 2)
+            //goto tailrecurse
+            -> ddmin2(test, n)
+        | `Boring:
+            std.bsfree(compliment)
+        ;;
+    ;;
+    
+    var count = std.bscount(test)
+    if n < count
+        cleanupsubtestsexcept((0 : std.bitset#))
+        n = std.min(count, 2*n)
+        //goto tailrecurse
+        -> ddmin2(test, n)
+    ;;
+    
+    cleanup()
+    -> void
+}
+
+const spittest = {test : std.bitset#
+    // XXX: Write the test with the same permissions it started with.
+    var f = std.try(bio.create(testfile, bio.Wr, 0o755))
+    
+    for var i = 0; i < lines.len; i++
+        if std.bshas(test, i)
+            match bio.write(f, lines[i])
+            | `bio.Ok n:
+                if lines[i].len != n
+                    std.fatal("error writing test case\n")
+                ;;
+            | _:
+                std.fatal("error writing test case\n")
+            ;;
+        ;;
+    ;;
+    
+    if !bio.close(f)
+        std.fatal("error closing writing test file\n")
+    ;;
+}
+
+const loadtestlines = {
+    var f = std.try(bio.open(testfile, bio.Rd))
+   
+    while true
+        match bio.readto(f, "\n")
+        | `bio.Ok ln:
+            // XXX maybe these stdlib functions should keep the delim
+            // XXX we are adding a \n even when we don't want one at EOF...
+            var lndup = std.sldup(ln)
+            std.slfree(ln)
+            std.sljoin(&lndup, "\n")
+            std.slpush(&lines, lndup)
+        | `bio.Eof:
+            break
+        | `bio.Err ioerr:
+            std.fatal("error reading input line: {}\n", ioerr)
+        ;;
+       
+   ;;
+    
+    if !bio.close(f)
+        std.fatal("error closing test file\n")
+    ;;
+}
+
+const main = { args : byte[:][:]
+    if args.len != 3 
+        std.fatal("usage: {} TESTER INPUT\n", args[0])
+    ;;
+    tester = args[1]
+    testfile = args[2]
+
+    loadtestlines()
+        
+    var initialtest = std.mkbs()
+    for var i = 0; i < lines.len; i++
+        std.bsput(initialtest, i) 
+    ;;
+
+    match runtest(initialtest)
+    | `Boring:
+        std.fatal("unmodified test case was boring, aborting.\n")
+    | `Interesting:
+    ;;
+    
+    ddmin(initialtest)
+}

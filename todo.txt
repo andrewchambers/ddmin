@@ -1,0 +1,3 @@
+- get mc fixed so goto prevents stack growth.
+- use a result cache, we are pointlessly rerunning the test.
+- should partition wrap around if there are not enough?

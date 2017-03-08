@@ -1,4 +1,4 @@
-DDMIN(1)                                              BSD General Commands Manual                                             DDMIN(1)
+DDMIN(1)                  BSD General Commands Manual                 DDMIN(1)
 
 NAME
      ddmin — minimise textual test cases automatically
@@ -7,8 +7,9 @@ SYNOPSIS
      ddmin [-c] [-h] tester testfile
 
 DESCRIPTION
-     ddmin minimises testfile in place automatically using delta debugging.  It works by by deleting lines (or characters with -c)
-     while ensuring tester returns 0.
+     ddmin minimises testfile in place automatically using delta debugging.
+     It works by by deleting lines (or characters with -c) while ensuring
+     tester returns 0.
 
 EXIT STATUS
      The ddmin utility exits 0 on success, and >0 if an error occurs.
@@ -20,7 +21,7 @@ EXAMPLE
 
      int main()
      {
-             printf("hello world!0);
+             printf("hello world!");
              return 0;
      }
 
@@ -43,4 +44,4 @@ EXAMPLE
 
      int main(){printf("hello");return;}
 
-BSD                                                          March 9, 2017                                                         BSD
+BSD                              March 9, 2017                             BSD

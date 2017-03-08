@@ -1,3 +1,7 @@
+// A test case reduction program by Andrew Chambers
+// using the minimizing delta debugging algorithm from
+// Andreas Zeller and Ralf Hildebrandt. 2002. Simplifying and Isolating Failure-Inducing Input
+
 use std
 use bio
 

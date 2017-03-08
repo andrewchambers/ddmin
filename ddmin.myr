@@ -14,46 +14,6 @@ type result = union
     `Boring
 ;;
 
-const runtest = {test : std.bitset#
-    spittest(test)
-    
-    var pid = std.fork()
-    
-    if pid == 0
-        std.execvp(tester, [][:])
-        std.fatal("error executing {}!\n", tester)
-    ;;
-    
-    match std.wait(pid)
-    | `std.Wsuccess:
-        -> `Interesting
-    | _:
-        -> `Boring
-    ;;
-}
-
-const partition = {test, n
-    var partitions : std.bitset#[:] = [][:]
-    var vals = [][:]
-    
-    for v in std.bybsvalue(test)
-        std.slpush(&vals, v)
-    ;;
-    
-    var partsz = vals.len / n
-    
-    for var i = 0; i < vals.len && partsz != 0; i += partsz
-        std.slpush(&partitions, std.mkbs())
-        for var j = 0 ; j < partsz && i+j < vals.len; j++
-            std.bsput(partitions[partitions.len-1], vals[i + j])
-        ;;
-    ;;
-    
-    std.slfree(vals)
-    
-    -> partitions
-}
-
 const ddmin = {test
     -> ddmin2(test, 2)
 }
@@ -117,6 +77,46 @@ const ddmin2 = {test, n
     spittest(test)
     cleanup()
     -> void
+}
+
+const partition = {test, n
+    var partitions : std.bitset#[:] = [][:]
+    var vals = [][:]
+    
+    for v in std.bybsvalue(test)
+        std.slpush(&vals, v)
+    ;;
+    
+    var partsz = vals.len / n
+    
+    for var i = 0; i < vals.len && partsz != 0; i += partsz
+        std.slpush(&partitions, std.mkbs())
+        for var j = 0 ; j < partsz && i+j < vals.len; j++
+            std.bsput(partitions[partitions.len-1], vals[i + j])
+        ;;
+    ;;
+    
+    std.slfree(vals)
+    
+    -> partitions
+}
+
+const runtest = {test : std.bitset#
+    spittest(test)
+    
+    var pid = std.fork()
+    
+    if pid == 0
+        std.execvp(tester, [][:])
+        std.fatal("error executing {}!\n", tester)
+    ;;
+    
+    match std.wait(pid)
+    | `std.Wsuccess:
+        -> `Interesting
+    | _:
+        -> `Boring
+    ;;
 }
 
 const spittest = {test : std.bitset#

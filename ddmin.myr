@@ -32,7 +32,7 @@ const ddmin2 = {test, n
     var compliments : std.bitset#[:] = [][:]
     var vals = [][:]
     var ntestvals = 0
-    
+
     for v in std.bybsvalue(test)
         std.slpush(&vals, v)
         ntestvals += 1
@@ -90,7 +90,22 @@ const ddmin2 = {test, n
     -> void
 }
 
+var resultcache : std.htab(std.bitset#, result)#
+
+const __init__ = {
+    // XXX: make this hash function better?
+    const bshash = {bs; -> (std.bscount(bs) : uint32) ^ (std.bsmax(bs) : uint32)}
+    resultcache = std.mkht(bshash, std.bseq)
+}
+
+
 const runtest = {test : std.bitset#
+    match std.htget(resultcache, test)
+    | `std.Some r:
+        -> r
+    | `std.None:
+    ;;
+    
     spittest(test)
     
     var pid = std.fork()
@@ -100,12 +115,16 @@ const runtest = {test : std.bitset#
         std.fatal("error executing {}!\n", tester)
     ;;
     
+    var result = `Boring
+    
     match std.wait(pid)
     | `std.Wsuccess:
-        -> `Interesting
+        result = `Interesting
     | _:
-        -> `Boring
     ;;
+    
+    std.htput(resultcache, std.bsdup(test), result)
+    -> result
 }
 
 const spittest = {test : std.bitset#

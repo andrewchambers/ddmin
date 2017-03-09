@@ -1,3 +1,4 @@
 - get mc fixed so goto prevents stack growth.
-- use a result cache, we are pointlessly rerunning the test.
-- should partition wrap around if there are not enough?
+- fix incorrect replacement of new lines.
+- check input is executable and give nicer error message.
+- write output with same permissions it started with.

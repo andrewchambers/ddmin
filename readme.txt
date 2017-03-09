@@ -42,6 +42,6 @@ EXAMPLE
 
      Produces the minimised output:
 
-     int main(){printf("hello");return;}
+     main(){printf("hello");return;}
 
 BSD                              March 9, 2017                             BSD

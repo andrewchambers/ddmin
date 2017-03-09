@@ -1,2 +1,3 @@
 bin ddmin = ddmin.myr;;
-gen readme.txt = sh -c "groff -t -e -mandoc -Tutf8 -Kutf8 ddmin.1 | col -bx > readme.txt" ;;
+man = ddmin.1;;
+gen readme.txt = sh -c "groff -t -e -mandoc -Tutf8 -Kutf8 ddmin.1 | col -bx > readme.txt";;

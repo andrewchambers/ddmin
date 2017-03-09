@@ -18,87 +18,76 @@ const ddmin = {test
     -> ddmin2(test, 2)
 }
 
+const cleanuptests = {tests
+    for test in tests
+        std.bsfree(test)
+    ;;
+    std.slfree(tests)
+}
+
 const ddmin2 = {test, n
     // XXX mc bug? cannot use this label...
     // :tailrecurse
     
-    var subtests = partition(test, n)
+    var compliments : std.bitset#[:] = [][:]
+    var vals = [][:]
+    var ntestvals = 0
     
-    var cleanupsubtestsexcept = {retain
-        for subtest in subtests
-            if subtest != retain
-                std.bsfree(subtest)
-            ;;
+    for v in std.bybsvalue(test)
+        std.slpush(&vals, v)
+        ntestvals += 1
+    ;;
+    
+    var partsz = vals.len / n
+    
+    for var i = 0; i < vals.len && partsz != 0; i += partsz
+        var subtest = std.mkbs()
+        for var j = 0 ; j < partsz && i+j < vals.len; j++
+            std.bsput(subtest, vals[i + j])
         ;;
-        std.slfree(subtests)
-    }
-    
-    var cleanup = {
-        cleanupsubtestsexcept((0 : std.bitset#))
-        std.bsfree(test)
-    }
-    
-    for subtest in subtests
+
         match runtest(subtest)
         | `Interesting:
+            cleanuptests(compliments)
+            std.slfree(vals)
             std.bsfree(test)
-            cleanupsubtestsexcept(subtest)
             test = subtest
+            n = 2
+            //goto tailrecurse
+            -> ddmin2(test, n)
+        | `Boring:
+            var compliment = std.bsdup(test)
+            std.bsdiff(compliment, subtest)
+            std.bsfree(subtest)
+            std.slpush(&compliments, compliment)
+        ;;
+    ;;
+
+    std.slfree(vals)
+    
+    for compliment in compliments
+        match runtest(compliment)
+        | `Interesting:
+            std.bsfree(test)
+            test = std.bsdup(compliment)
+            cleanuptests(compliments)
             n = 2
             //goto tailrecurse
             -> ddmin2(test, n)
         | `Boring:
         ;;
     ;;
-    
-    for subtest in subtests
-        var compliment = std.bsdup(test)
-        std.bsdiff(compliment, subtest)
-        match runtest(compliment)
-        | `Interesting:
-            cleanup()
-            test = compliment
-            n = std.max(n - 1, 2)
-            //goto tailrecurse
-            -> ddmin2(test, n)
-        | `Boring:
-            std.bsfree(compliment)
-        ;;
-    ;;
-    
-    var count = std.bscount(test)
-    if n < count
-        cleanupsubtestsexcept((0 : std.bitset#))
-        n = std.min(count, 2*n)
+    cleanuptests(compliments)
+
+    if n < ntestvals
+        n = std.min(ntestvals, 2*n)
         //goto tailrecurse
         -> ddmin2(test, n)
     ;;
     
     spittest(test)
-    cleanup()
+    std.bsfree(test)
     -> void
-}
-
-const partition = {test, n
-    var partitions : std.bitset#[:] = [][:]
-    var vals = [][:]
-    
-    for v in std.bybsvalue(test)
-        std.slpush(&vals, v)
-    ;;
-    
-    var partsz = vals.len / n
-    
-    for var i = 0; i < vals.len && partsz != 0; i += partsz
-        std.slpush(&partitions, std.mkbs())
-        for var j = 0 ; j < partsz && i+j < vals.len; j++
-            std.bsput(partitions[partitions.len-1], vals[i + j])
-        ;;
-    ;;
-    
-    std.slfree(vals)
-    
-    -> partitions
 }
 
 const runtest = {test : std.bitset#

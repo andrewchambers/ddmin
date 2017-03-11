@@ -26,8 +26,7 @@ const cleanuptests = {tests
 }
 
 const ddmin2 = {test, n
-    // XXX mc bug? cannot use this label...
-    // :tailrecurse
+    :tailrecurse
     
     var compliments : std.bitset#[:] = [][:]
     var vals = [][:]
@@ -53,8 +52,7 @@ const ddmin2 = {test, n
             std.bsfree(test)
             test = subtest
             n = 2
-            //goto tailrecurse
-            -> ddmin2(test, n)
+            goto tailrecurse
         | `Boring:
             var compliment = std.bsdup(test)
             std.bsdiff(compliment, subtest)
@@ -72,8 +70,7 @@ const ddmin2 = {test, n
             test = std.bsdup(compliment)
             cleanuptests(compliments)
             n = 2
-            //goto tailrecurse
-            -> ddmin2(test, n)
+            goto tailrecurse
         | `Boring:
         ;;
     ;;
@@ -81,8 +78,7 @@ const ddmin2 = {test, n
 
     if n < ntestvals
         n = std.min(ntestvals, 2*n)
-        //goto tailrecurse
-        -> ddmin2(test, n)
+        goto tailrecurse
     ;;
     
     spittest(test)

@@ -3,21 +3,21 @@
 .Os
 .Sh NAME
 .Nm ddmin
-.Nd minimise textual test cases automatically
+.Nd minimise interesting files automatically
 .Sh SYNOPSIS
 .Nm ddmin
 .Op Fl c
 .Op Fl h
 .Ar tester
-.Ar testfile
+.Ar interesting
 .Sh DESCRIPTION
 .Nm
-minimises 
-.Ar testfile
+minimises file
+.Ar interesting
 in place automatically using delta debugging.
-It works by by deleting lines (or characters with -c) while ensuring
+It works by by deleting lines (or bytes with -b) while ensuring
 .Ar tester
-returns 0.
+returns 0 when executed.
 .Sh EXIT STATUS
 .Ex -std ddmin
 .Sh EXAMPLE
@@ -45,7 +45,7 @@ fi
 
 The invocation:
 
-ddmin -c ./test.sh ./test.c
+ddmin -b ./test.sh ./test.c
 
 Produces the minimised output:
 

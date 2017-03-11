@@ -1,2 +1,1 @@
-- check input is executable and give nicer error message.
-- write output with same permissions it started with.
+- maybe add chars mode for utf8

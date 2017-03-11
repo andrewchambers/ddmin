@@ -3,10 +3,12 @@
 // Andreas Zeller and Ralf Hildebrandt. 2002. Simplifying and Isolating Failure-Inducing Input
 
 use std
+use sys
 use bio
 
 var chunks : byte[:][:]
-var testfile : byte[:]
+var interestingfile : byte[:]
+var interestingfilemode : int
 var tester : byte[:]
 
 type result = union 
@@ -81,7 +83,7 @@ const ddmin2 = {test, n
         goto tailrecurse
     ;;
     
-    spittest(test)
+    spitinteresting(test)
     std.bsfree(test)
     -> void
 }
@@ -102,7 +104,7 @@ const runtest = {test : std.bitset#
     | `std.None:
     ;;
     
-    spittest(test)
+    spitinteresting(test)
     
     var pid = std.fork()
     
@@ -123,9 +125,9 @@ const runtest = {test : std.bitset#
     -> result
 }
 
-const spittest = {test : std.bitset#
-    // XXX: Write the test with the same permissions it started with.
-    var f = std.try(bio.create(testfile, bio.Wr, 0o755))
+const spitinteresting = {test : std.bitset#
+
+    var f = std.try(bio.create(interestingfile, bio.Wr, interestingfilemode))
     
     for var i = 0; i < chunks.len; i++
         if std.bshas(test, i)
@@ -145,15 +147,15 @@ const spittest = {test : std.bitset#
     ;;
 }
 
-const loadtestchunks = {chars
-    var f = std.try(bio.open(testfile, bio.Rd))
+const loadtestchunks = {bytemode
+    var f = std.try(bio.open(interestingfile, bio.Rd))
    
     var chunk = [][:]
     while true
         match bio.getb(f)
         | `bio.Ok b:
             std.slpush(&chunk, b)
-            if chars || b == ('\n' : byte)
+            if bytemode || b == ('\n' : byte)
                 std.slpush(&chunks, chunk)
                 chunk = [][:]
             ;;
@@ -172,28 +174,44 @@ const loadtestchunks = {chars
 const main = { args : byte[:][:]
     
     var cmd = std.optparse(args, &[
-        .argdesc = "tester testfile",
+        .argdesc = "tester interesting",
         .minargs = 2,
         .maxargs = 2,
         .opts = [
-            [.opt='c', .desc="minimise chars instead of lines"],
+            [.opt='b', .desc="minimise bytes instead of lines"],
         ][:]
     ])
-    var chars = false
+    var bytemode = false
 
     for opt in cmd.opts
         match opt
-        | ('c', ""):
-            chars = true
+        | ('b', ""):
+            bytemode = true
         | _:
             std.die("unreachable\n")
         ;;
     ;;
 
     tester = cmd.args[0]
-    testfile = cmd.args[1]
+    interestingfile = cmd.args[1]
 
-    loadtestchunks(chars)
+    var statbuf : sys.statbuf
+
+    if sys.stat(tester, &statbuf) != 0
+        std.fatal("error stating {}\n", tester)
+    ;;
+
+    if 0o100 & (statbuf.mode : int) == 0
+        std.fatal("{} not executable\n", tester)
+    ;;
+
+    if sys.stat(interestingfile, &statbuf) != 0
+        std.fatal("error stating {}}\n", interestingfile)
+    ;;
+
+    interestingfilemode = 0o777 & (statbuf.mode : int)
+
+    loadtestchunks(bytemode)
         
     var initialtest = std.mkbs()
     for var i = 0; i < chunks.len; i++

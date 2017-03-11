@@ -15,7 +15,7 @@ EXIT STATUS
      The ddmin utility exits 0 on success, and >0 if an error occurs.
 
 EXAMPLE
-     Given the input file test.c:
+     Given the input file interesting.c:
 
      #include <stdio.h>
 
@@ -31,17 +31,17 @@ EXAMPLE
 
      set -e
 
-     gcc test.c
+     gcc interesting.c
      if ! ./a.out | grep -q "hello" then
              exit 1
      fi
 
      The invocation:
 
-     ddmin -b ./test.sh ./test.c
+     ddmin -b ./test.sh ./interesting.c
 
      Produces the minimised output:
 
      main(){printf("hello");return;}
 
-BSD                             March 11, 2017                             BSD
+BSD                             March 12, 2017                             BSD

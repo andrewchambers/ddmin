@@ -22,7 +22,7 @@ returns 0 when executed.
 .Ex -std ddmin
 .Sh EXAMPLE
 .Bd -literal
-Given the input file test.c:
+Given the input file interesting.c:
 
 #include <stdio.h>
 
@@ -38,14 +38,14 @@ The test script test.sh:
 
 set -e
 
-gcc test.c
+gcc interesting.c
 if ! ./a.out | grep -q "hello" then
 	exit 1
 fi
 
 The invocation:
 
-ddmin -b ./test.sh ./test.c
+ddmin -b ./test.sh ./interesting.c
 
 Produces the minimised output:
 

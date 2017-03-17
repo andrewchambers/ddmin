@@ -7,9 +7,9 @@ SYNOPSIS
      ddmin [-b] [-h] tester interesting
 
 DESCRIPTION
-     ddmin minimises file interesting in place automatically using delta
-     debugging.  It works by by deleting lines (or bytes with -b) while ensur‐
-     ing tester returns 0 when executed.
+     ddmin minimises file interesting in place using delta debugging.  It
+     works by deleting lines (or bytes with -b) while ensuring tester returns
+     0 when executed.
 
 EXIT STATUS
      The ddmin utility exits 0 on success, and >0 if an error occurs.

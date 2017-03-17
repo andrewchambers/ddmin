@@ -4,7 +4,7 @@ NAME
      ddmin — minimise interesting files automatically
 
 SYNOPSIS
-     ddmin [-c] [-h] tester interesting
+     ddmin [-b] [-h] tester interesting
 
 DESCRIPTION
      ddmin minimises file interesting in place automatically using delta
@@ -44,4 +44,4 @@ EXAMPLE
 
      main(){printf("hello");return;}
 
-BSD                             March 12, 2017                             BSD
+BSD                              March 8, 2017                             BSD

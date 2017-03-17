@@ -18,6 +18,11 @@ in place using delta debugging.
 It works by deleting lines (or bytes with -b) while ensuring
 .Ar tester
 returns 0 when executed.
+.Pp
+.Nm
+forwards the stdout and stderr of successive
+.Ar tester
+executions to enable debug logging.
 .Sh EXIT STATUS
 .Ex -std ddmin
 .Sh EXAMPLE

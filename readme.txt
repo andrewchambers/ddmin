@@ -11,6 +11,9 @@ DESCRIPTION
      works by deleting lines (or bytes with -b) while ensuring tester returns
      0 when executed.
 
+     ddmin forwards the stdout and stderr of successive tester executions to
+     enable debug logging.
+
 EXIT STATUS
      The ddmin utility exits 0 on success, and >0 if an error occurs.
 
@@ -44,4 +47,4 @@ EXAMPLE
 
      main(){printf("hello");return;}
 
-BSD                              March 8, 2017                             BSD
+BSD                             March 18, 2017                             BSD

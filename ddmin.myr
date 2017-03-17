@@ -11,218 +11,218 @@ var interestingfile : byte[:]
 var interestingfilemode : int
 var tester : byte[:]
 
-type result = union 
-    `Interesting
-    `Boring
+type result = union
+	`Interesting
+	`Boring
 ;;
 
 const ddmin = {test
-    -> ddmin2(test, 2)
+	-> ddmin2(test, 2)
 }
 
 const cleanuptests = {tests
-    for test in tests
-        std.bsfree(test)
-    ;;
-    std.slfree(tests)
+	for test in tests
+		std.bsfree(test)
+	;;
+	std.slfree(tests)
 }
 
 const ddmin2 = {test, n
-    :tailrecurse
-    
-    var compliments : std.bitset#[:] = [][:]
-    var vals = [][:]
-    var ntestvals = 0
+	:tailrecurse
 
-    for v in std.bybsvalue(test)
-        std.slpush(&vals, v)
-        ntestvals += 1
-    ;;
-    
-    var partsz = vals.len / n
-    
-    for var i = 0; i < vals.len && partsz != 0; i += partsz
-        var subtest = std.mkbs()
-        for var j = 0 ; j < partsz && i+j < vals.len; j++
-            std.bsput(subtest, vals[i + j])
-        ;;
+	var compliments : std.bitset#[:] = [][:]
+	var vals = [][:]
+	var ntestvals = 0
 
-        match runtest(subtest)
-        | `Interesting:
-            cleanuptests(compliments)
-            std.slfree(vals)
-            std.bsfree(test)
-            test = subtest
-            n = 2
-            goto tailrecurse
-        | `Boring:
-            var compliment = std.bsdup(test)
-            std.bsdiff(compliment, subtest)
-            std.bsfree(subtest)
-            std.slpush(&compliments, compliment)
-        ;;
-    ;;
+	for v in std.bybsvalue(test)
+		std.slpush(&vals, v)
+		ntestvals += 1
+	;;
 
-    std.slfree(vals)
-    
-    for compliment in compliments
-        match runtest(compliment)
-        | `Interesting:
-            std.bsfree(test)
-            test = std.bsdup(compliment)
-            cleanuptests(compliments)
-            n = 2
-            goto tailrecurse
-        | `Boring:
-        ;;
-    ;;
-    cleanuptests(compliments)
+	var partsz = vals.len / n
 
-    if n < ntestvals
-        n = std.min(ntestvals, 2*n)
-        goto tailrecurse
-    ;;
-    
-    spitinteresting(test)
-    std.bsfree(test)
-    -> void
+	for var i = 0; i < vals.len && partsz != 0; i += partsz
+		var subtest = std.mkbs()
+		for var j = 0 ; j < partsz && i+j < vals.len; j++
+			std.bsput(subtest, vals[i + j])
+		;;
+
+		match runtest(subtest)
+		| `Interesting:
+			cleanuptests(compliments)
+			std.slfree(vals)
+			std.bsfree(test)
+			test = subtest
+			n = 2
+			goto tailrecurse
+		| `Boring:
+			var compliment = std.bsdup(test)
+			std.bsdiff(compliment, subtest)
+			std.bsfree(subtest)
+			std.slpush(&compliments, compliment)
+		;;
+	;;
+
+	std.slfree(vals)
+
+	for compliment in compliments
+		match runtest(compliment)
+		| `Interesting:
+			std.bsfree(test)
+			test = std.bsdup(compliment)
+			cleanuptests(compliments)
+			n = 2
+			goto tailrecurse
+		| `Boring:
+		;;
+	;;
+	cleanuptests(compliments)
+
+	if n < ntestvals
+		n = std.min(ntestvals, 2*n)
+		goto tailrecurse
+	;;
+
+	spitinteresting(test)
+	std.bsfree(test)
+	-> void
 }
 
 var resultcache : std.htab(std.bitset#, result)#
 
 const __init__ = {
-    // Can we make this hash function better?
-    const bshash = {bs; -> (std.bscount(bs) : uint32) ^ (std.bsmax(bs) : uint32)}
-    resultcache = std.mkht(bshash, std.bseq)
+	// Can we make this hash function better?
+	const bshash = {bs; -> (std.bscount(bs) : uint32) ^ (std.bsmax(bs) : uint32)}
+	resultcache = std.mkht(bshash, std.bseq)
 }
 
 
 const runtest = {test : std.bitset#
-    match std.htget(resultcache, test)
-    | `std.Some r:
-        -> r
-    | `std.None:
-    ;;
-    
-    spitinteresting(test)
-    
-    var pid = std.fork()
-    
-    if pid == 0
-        std.execvp(tester, [][:])
-        std.fatal("error executing {}!\n", tester)
-    ;;
-    
-    var result = `Boring
-    
-    match std.wait(pid)
-    | `std.Wsuccess:
-        result = `Interesting
-    | _:
-    ;;
-    
-    std.htput(resultcache, std.bsdup(test), result)
-    -> result
+	match std.htget(resultcache, test)
+	| `std.Some r:
+		-> r
+	| `std.None:
+	;;
+
+	spitinteresting(test)
+
+	var pid = std.fork()
+
+	if pid == 0
+		std.execvp(tester, [][:])
+		std.fatal("error executing {}!\n", tester)
+	;;
+
+	var result = `Boring
+
+	match std.wait(pid)
+	| `std.Wsuccess:
+		result = `Interesting
+	| _:
+	;;
+
+	std.htput(resultcache, std.bsdup(test), result)
+	-> result
 }
 
 const spitinteresting = {test : std.bitset#
 
-    var f = std.try(bio.create(interestingfile, bio.Wr, interestingfilemode))
-    
-    for var i = 0; i < chunks.len; i++
-        if std.bshas(test, i)
-            match bio.write(f, chunks[i])
-            | `bio.Ok n:
-                if chunks[i].len != n
-                    std.fatal("error writing test case\n")
-                ;;
-            | _:
-                std.fatal("error writing test case\n")
-            ;;
-        ;;
-    ;;
-    
-    if !bio.close(f)
-        std.fatal("error closing writing test file\n")
-    ;;
+	var f = std.try(bio.create(interestingfile, bio.Wr, interestingfilemode))
+
+	for var i = 0; i < chunks.len; i++
+		if std.bshas(test, i)
+			match bio.write(f, chunks[i])
+			| `bio.Ok n:
+				if chunks[i].len != n
+					std.fatal("error writing test case\n")
+				;;
+			| _:
+				std.fatal("error writing test case\n")
+			;;
+		;;
+	;;
+
+	if !bio.close(f)
+		std.fatal("error closing writing test file\n")
+	;;
 }
 
 const loadtestchunks = {bytemode
-    var f = std.try(bio.open(interestingfile, bio.Rd))
-   
-    var chunk = [][:]
-    while true
-        match bio.getb(f)
-        | `bio.Ok b:
-            std.slpush(&chunk, b)
-            if bytemode || b == ('\n' : byte)
-                std.slpush(&chunks, chunk)
-                chunk = [][:]
-            ;;
-        | `bio.Eof:
-            break
-        | `bio.Err ioerr:
-            std.fatal("error reading input line: {}\n", ioerr)
-        ;;
-   ;;
-    
-    if !bio.close(f)
-        std.fatal("error closing test file\n")
-    ;;
+	var f = std.try(bio.open(interestingfile, bio.Rd))
+
+	var chunk = [][:]
+	while true
+		match bio.getb(f)
+		| `bio.Ok b:
+			std.slpush(&chunk, b)
+			if bytemode || b == ('\n' : byte)
+				std.slpush(&chunks, chunk)
+				chunk = [][:]
+			;;
+		| `bio.Eof:
+			break
+		| `bio.Err ioerr:
+			std.fatal("error reading input line: {}\n", ioerr)
+		;;
+	;;
+
+	if !bio.close(f)
+		std.fatal("error closing test file\n")
+	;;
 }
 
 const main = { args : byte[:][:]
-    
-    var cmd = std.optparse(args, &[
-        .argdesc = "tester interesting",
-        .minargs = 2,
-        .maxargs = 2,
-        .opts = [
-            [.opt='b', .desc="minimise bytes instead of lines"],
-        ][:]
-    ])
-    var bytemode = false
 
-    for opt in cmd.opts
-        match opt
-        | ('b', ""):
-            bytemode = true
-        | _:
-            std.die("unreachable\n")
-        ;;
-    ;;
+	var cmd = std.optparse(args, &[
+		.argdesc = "tester interesting",
+		.minargs = 2,
+		.maxargs = 2,
+		.opts = [
+			[.opt='b', .desc="minimise bytes instead of lines"],
+		][:]
+	])
+	var bytemode = false
 
-    tester = cmd.args[0]
-    interestingfile = cmd.args[1]
+	for opt in cmd.opts
+		match opt
+		| ('b', ""):
+			bytemode = true
+		| _:
+			std.die("unreachable\n")
+		;;
+	;;
 
-    var statbuf : sys.statbuf
+	tester = cmd.args[0]
+	interestingfile = cmd.args[1]
 
-    if sys.stat(tester, &statbuf) != 0
-        std.fatal("error stating {}\n", tester)
-    ;;
+	var statbuf : sys.statbuf
 
-    if 0o100 & (statbuf.mode : int) == 0
-        std.fatal("{} not executable\n", tester)
-    ;;
+	if sys.stat(tester, &statbuf) != 0
+		std.fatal("error stating {}\n", tester)
+	;;
 
-    if sys.stat(interestingfile, &statbuf) != 0
-        std.fatal("error stating {}}\n", interestingfile)
-    ;;
+	if 0o100 & (statbuf.mode : int) == 0
+		std.fatal("{} not executable\n", tester)
+	;;
 
-    interestingfilemode = 0o777 & (statbuf.mode : int)
+	if sys.stat(interestingfile, &statbuf) != 0
+		std.fatal("error stating {}}\n", interestingfile)
+	;;
 
-    loadtestchunks(bytemode)
-        
-    var initialtest = std.mkbs()
-    for var i = 0; i < chunks.len; i++
-        std.bsput(initialtest, i) 
-    ;;
+	interestingfilemode = 0o777 & (statbuf.mode : int)
 
-    match runtest(initialtest)
-    | `Boring:
-        std.fatal("unmodified test case was boring, aborting.\n")
-    | `Interesting:
-    ;;
-    
-    ddmin(initialtest)
+	loadtestchunks(bytemode)
+
+	var initialtest = std.mkbs()
+	for var i = 0; i < chunks.len; i++
+		std.bsput(initialtest, i)
+	;;
+
+	match runtest(initialtest)
+	| `Boring:
+		std.fatal("unmodified test case was boring, aborting.\n")
+	| `Interesting:
+	;;
+
+	ddmin(initialtest)
 }

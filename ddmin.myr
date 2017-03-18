@@ -91,9 +91,7 @@ const ddmin2 = {test, n
 var resultcache : std.htab(std.bitset#, result)#
 
 const __init__ = {
-	// Can we make this hash function better?
-	const bshash = {bs; -> (std.bscount(bs) : uint32) ^ (std.bsmax(bs) : uint32)}
-	resultcache = std.mkht(bshash, std.bseq)
+	resultcache = std.mkht(std.bshash, std.bseq)
 }
 
 

@@ -21,7 +21,7 @@ const ddmin = {test
 }
 
 const cleanuptests = {tests
-	for test in tests
+	for test : tests
 		std.bsfree(test)
 	;;
 	std.slfree(tests)
@@ -34,7 +34,7 @@ const ddmin2 = {test, n
 	var vals = [][:]
 	var ntestvals = 0
 
-	for v in std.bybsvalue(test)
+	for v : std.bybsvalue(test)
 		std.slpush(&vals, v)
 		ntestvals += 1
 	;;
@@ -65,7 +65,7 @@ const ddmin2 = {test, n
 
 	std.slfree(vals)
 
-	for compliment in compliments
+	for compliment : compliments
 		match runtest(compliment)
 		| `Interesting:
 			std.bsfree(test)
@@ -181,7 +181,7 @@ const main = { args : byte[:][:]
 	])
 	var bytemode = false
 
-	for opt in cmd.opts
+	for opt : cmd.opts
 		match opt
 		| ('b', ""):
 			bytemode = true

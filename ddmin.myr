@@ -10,6 +10,7 @@ var chunks : byte[:][:]
 var interestingfile : byte[:]
 var interestingfilemode : int
 var tester : byte[:]
+var resultcache : std.htab(std.bitset#, result)#
 
 type result = union
 	`Interesting
@@ -88,13 +89,6 @@ const ddmin2 = {test, n
 	-> void
 }
 
-var resultcache : std.htab(std.bitset#, result)#
-
-const __init__ = {
-	resultcache = std.mkht(std.bshash, std.bseq)
-}
-
-
 const runtest = {test : std.bitset#
 	match std.htget(resultcache, test)
 	| `std.Some r:
@@ -130,7 +124,7 @@ const spitinteresting = {test : std.bitset#
 	for var i = 0; i < chunks.len; i++
 		if std.bshas(test, i)
 			match bio.write(f, chunks[i])
-			| `bio.Ok n:
+			| `std.Ok n:
 				if chunks[i].len != n
 					std.fatal("error writing test case\n")
 				;;
@@ -151,15 +145,15 @@ const loadtestchunks = {bytemode
 	var chunk = [][:]
 	while true
 		match bio.getb(f)
-		| `bio.Ok b:
+		| `std.Ok b:
 			std.slpush(&chunk, b)
 			if bytemode || b == ('\n' : byte)
 				std.slpush(&chunks, chunk)
 				chunk = [][:]
 			;;
-		| `bio.Eof:
+		| `std.Err `bio.Eof:
 			break
-		| `bio.Err ioerr:
+		| `std.Err ioerr:
 			std.fatal("error reading input line: {}\n", ioerr)
 		;;
 	;;
@@ -190,6 +184,7 @@ const main = { args : byte[:][:]
 		;;
 	;;
 
+	resultcache = std.mkht()
 	tester = cmd.args[0]
 	interestingfile = cmd.args[1]
 
